@@ -12,9 +12,15 @@ const fallbackSummary = (content) => ({
   suggestedTitle: 'Untitled note'
 });
 
+const createAiConfigError = (message) => {
+  const error = new Error(message);
+  error.statusCode = 503;
+  return error;
+};
+
 const generateNoteInsights = async ({ title, content }) => {
   if (!process.env.GEMINI_API_KEY) {
-    throw new Error('GEMINI_API_KEY is required for AI summaries');
+    throw createAiConfigError('AI summaries are not configured yet.');
   }
 
   const prompt = `You are an assistant for a productivity notes app.
@@ -61,7 +67,19 @@ ${content || ''}`;
 
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(`Gemini request failed: ${body}`);
+    let providerMessage = '';
+
+    try {
+      providerMessage = JSON.parse(body)?.error?.message || '';
+    } catch {
+      providerMessage = '';
+    }
+
+    if (response.status === 403 && providerMessage.toLowerCase().includes('api key')) {
+      throw createAiConfigError('AI summaries are temporarily unavailable because the Gemini API key needs to be replaced.');
+    }
+
+    throw createAiConfigError('AI summaries are temporarily unavailable. Please try again later.');
   }
 
   const data = await response.json();
