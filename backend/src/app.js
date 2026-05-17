@@ -23,6 +23,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/notes', noteRoutes);
 app.use('/api/shared', publicRoutes);
 
+app.use('/auth', authRoutes);
+app.use('/notes', noteRoutes);
+app.use('/shared', publicRoutes);
+
 app.use(notFound);
 app.use(errorHandler);
 
